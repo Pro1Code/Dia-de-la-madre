@@ -3,7 +3,7 @@
   // 🔧 VARIABLES DE AJUSTE MANUAL (MODIFICA ESTAS)
   // =============================================
   
-  const NUMERO_DE_PARTES = 6;
+  const NUMERO_DE_PARTES = 11;
   
   // 🎯 AJUSTE DE POSICIÓN DEL TEXTO EN LA RULETA
   const AJUSTE_POSICION = {
@@ -23,12 +23,17 @@
   // 📝 TEXTOS PERSONALIZABLES PARA CADA NÚMERO
   // =============================================
   const MENSAJES_POR_NUMERO = {
-    1: "¡Eres la mamá más increíble del mundo! 💖\nGracias por todo tu amor y dedicación.",
-    2: "¡Hoy es tu día especial! 🌸\nDisfruta cada momento, te lo mereces.",
-    3: "¡Mamá, eres mi estrella favorita! ⭐\nSiempre iluminas mi camino.",
-    4: "¡La mejor mamá del universo! 🌺\nTu amor es el regalo más preciado.",
-    5: "¡Eres única e irrepetible! 🎀\nNadie cocina y mima como tú.",
-    6: "¡Gracias por ser mi mamá! 💝\nEres mi ejemplo a seguir, te amo."
+    1: "¡Gaseosa Coca Cola en lata! 💖\nCama de Miguel Ángel.",
+    2: "¡Pulsera Colorida! 🌸\nTina en cuarto de Bruno.",
+    3: "¡Anillos Edición Limitada! ⭐\nLavadora.",
+    4: "¡Meneito sensual de Atreus y Atenea! 🌺\nSala.",
+    5: "??? 🎀\nComputadora.",
+    6: "¡Arete Premium! 💝\nJuego frío-caliente.",
+    7: "??? 🎀\nRopero de Miguel Ángel.",
+    8: "¡Tacita secsi! 💝\nJuego frío-caliente.",
+    9: "¡Bailecito Premium! 🎀\nSala.",
+    10: "¡Abrazo Familiar! 💝\nCon Atreus y Atenea.",
+    11: "¡2da Pulsera Colorida feita! 🌸\nTina en cuarto de Bruno."
   };
   
   const MENSAJE_POR_DEFECTO = "¡Feliz Día de la Madre! 🎉\nEres la mejor mamá del mundo.";
@@ -37,15 +42,33 @@
   const MENSAJE_GANADOR_FINAL = "🎉 ¡FELICIDADES MAMÁ! 🎉\n\n¡Este es tu regalo especial!\nTe amamos con todo nuestro corazón 💖\n\n¡Eres la mejor mamá del mundo! 🌸";
 
   // =============================================
+  // 🎲 CONFIGURACIÓN DE PROBABILIDADES
+  // =============================================
+  const CONFIG_PROBABILIDADES = {
+    5: {
+      tipo: 'penultimo',  // Solo aparece cuando quedan 2 números
+      descripcion: 'Aparece solo en el penúltimo giro'
+    },
+    7: {
+      tipo: 'despues_de',  // Aparece después de cierta cantidad de eliminaciones
+      eliminacionesNecesarias: 7,  // Después de 7 números eliminados
+      descripcion: 'Aparece después de eliminar 7 números'
+    }
+  };
+
+  // =============================================
   // NO MODIFICAR DE AQUÍ PARA ABAJO
   // =============================================
 
+  // Contador de números eliminados
+  let numerosEliminados = 0;
+  
   // Array para mantener los textos activos
   let textosActivos = [];
 
   function obtenerTextosDesdeHTML() {
     const listaElement = document.getElementById('lista-textos');
-    if (!listaElement) return ["1", "2", "3", "4", "5", "6"];
+    if (!listaElement) return ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"];
     
     const items = listaElement.querySelectorAll('li');
     const textos = [];
@@ -65,6 +88,98 @@
   // Inicializar textos activos
   function inicializarTextos() {
     textosActivos = obtenerTextosDesdeHTML();
+    numerosEliminados = 0;
+  }
+
+  // Verificar si un número puede ser seleccionado
+  function puedeSerSeleccionado(numero) {
+    const num = parseInt(numero);
+    const config = CONFIG_PROBABILIDADES[num];
+    
+    if (!config) return true; // Sin restricciones
+    
+    const numRestantes = textosActivos.length;
+    
+    if (config.tipo === 'penultimo') {
+      // Solo puede aparecer cuando quedan exactamente 2 números
+      return numRestantes <= 2;
+    }
+    
+    if (config.tipo === 'despues_de') {
+      // Solo puede aparecer después de cierta cantidad de eliminaciones
+      return numerosEliminados >= config.eliminacionesNecesarias;
+    }
+    
+    return true;
+  }
+
+  // Obtener un índice ganador válido (forzando probabilidades)
+  function obtenerIndiceGanadorForzado() {
+    if (textosActivos.length === 0) return -1;
+    
+    // Lista de números que DEBEN aparecer (prioritarios)
+    const numerosPrioritarios = [];
+    const numerosNormales = [];
+    
+    for (let i = 0; i < textosActivos.length; i++) {
+      const num = parseInt(textosActivos[i]);
+      const config = CONFIG_PROBABILIDADES[num];
+      
+      if (config) {
+        // Verificar si este número DEBE aparecer ahora
+        const numRestantes = textosActivos.length;
+        
+        let debeAparecer = false;
+        
+        if (config.tipo === 'penultimo' && numRestantes <= 2) {
+          debeAparecer = true;
+        }
+        
+        if (config.tipo === 'despues_de' && numerosEliminados >= config.eliminacionesNecesarias) {
+          debeAparecer = true;
+        }
+        
+        if (debeAparecer) {
+          numerosPrioritarios.push(i);
+        } else if (puedeSerSeleccionado(textosActivos[i])) {
+          numerosNormales.push(i);
+        }
+        // Si no puede ser seleccionado, no lo agregamos a ninguna lista
+      } else {
+        // Número sin restricciones
+        numerosNormales.push(i);
+      }
+    }
+    
+    // Si hay números prioritarios, elegir uno de ellos
+    if (numerosPrioritarios.length > 0) {
+      const indiceAleatorio = Math.floor(Math.random() * numerosPrioritarios.length);
+      console.log(`🎯 Forzando número prioritario: ${textosActivos[numerosPrioritarios[indiceAleatorio]]}`);
+      return numerosPrioritarios[indiceAleatorio];
+    }
+    
+    // Si no hay prioritarios, elegir de los normales
+    if (numerosNormales.length > 0) {
+      // Simular giro aleatorio entre los disponibles
+      const anguloAleatorio = Math.random() * Math.PI * 2;
+      const anguloPorParteActual = getAnguloTotal() / textosActivos.length;
+      
+      // Solo permitir índices que estén en numerosNormales
+      let intentos = 0;
+      while (intentos < 50) {
+        const indicePotencial = Math.floor(Math.random() * textosActivos.length);
+        if (numerosNormales.includes(indicePotencial)) {
+          return indicePotencial;
+        }
+        intentos++;
+      }
+      
+      // Fallback: devolver el primer índice normal disponible
+      return numerosNormales[0];
+    }
+    
+    // Si no hay nada disponible, devolver aleatorio
+    return Math.floor(Math.random() * textosActivos.length);
   }
 
   function obtenerColores(cantidad) {
@@ -98,14 +213,11 @@
   //  CREAR VENTANA MODAL FLOTANTE
   // =============================================
   function crearVentanaModal(numero, onClose) {
-    // Eliminar modal anterior si existe
     const modalAnterior = document.getElementById('modal-ganador');
     if (modalAnterior) modalAnterior.remove();
     
-    // Verificar si es el último número
     const esUltimoNumero = textosActivos.length <= 1;
     
-    // Crear overlay (fondo oscuro)
     const overlay = document.createElement('div');
     overlay.id = 'modal-ganador';
     overlay.style.cssText = `
@@ -123,7 +235,6 @@
       backdrop-filter: blur(5px);
     `;
     
-    // Crear ventana modal
     const modal = document.createElement('div');
     modal.style.cssText = `
       background: linear-gradient(180deg, #FFF5FA 0%, #FFE4F0 100%);
@@ -139,12 +250,10 @@
       position: relative;
     `;
     
-    // Contenedor del contenido
     const contenido = document.createElement('div');
     contenido.id = 'modal-contenido';
     modal.appendChild(contenido);
     
-    // Solo mostrar botón de cerrar si NO es el último número
     if (!esUltimoNumero) {
       const botonCerrar = document.createElement('button');
       botonCerrar.innerHTML = '✕';
@@ -182,13 +291,11 @@
     }
     
     overlay.appendChild(modal);
-    
     document.body.appendChild(overlay);
     
     return contenido;
   }
 
-  // Agregar estilos de animación
   const estilosModal = document.createElement('style');
   estilosModal.textContent = `
     @keyframes fadeIn {
@@ -217,15 +324,11 @@
   `;
   document.head.appendChild(estilosModal);
 
-  // =============================================
-  //  MOSTRAR VENTANA CON EL RESULTADO
-  // =============================================
   function mostrarVentanaGanador(numero, onClose) {
     const esUltimoNumero = textosActivos.length <= 1;
     const contenidoModal = crearVentanaModal(numero, onClose);
     
     if (esUltimoNumero) {
-      // Ventana especial para el ganador final
       const tituloFinal = document.createElement('div');
       tituloFinal.style.cssText = `
         font-size: 3rem;
@@ -263,7 +366,6 @@
       mensajeFinal.textContent = MENSAJE_GANADOR_FINAL;
       contenidoModal.appendChild(mensajeFinal);
       
-      // Botón de reiniciar
       const botonReiniciar = document.createElement('button');
       botonReiniciar.textContent = '🎀 ¡Jugar de nuevo! 🎀';
       botonReiniciar.style.cssText = `
@@ -294,14 +396,12 @@
       };
       contenidoModal.appendChild(botonReiniciar);
       
-      // Deshabilitar botón de girar
       girarBtn.disabled = true;
       girarBtn.style.opacity = '0.5';
       girarBtn.style.cursor = 'not-allowed';
       resultadoSpan.textContent = `🏆 ¡${numero} GANADOR! 🏆`;
       
     } else {
-      // Ventana normal
       const titulo = document.createElement('div');
       titulo.style.cssText = `
         font-size: 2.5rem;
@@ -314,7 +414,6 @@
       titulo.textContent = `🎀 ${numero} 🎀`;
       contenidoModal.appendChild(titulo);
       
-      // Línea separadora decorativa 1
       const separador1 = document.createElement('div');
       separador1.style.cssText = `
         width: 60%;
@@ -325,7 +424,6 @@
       `;
       contenidoModal.appendChild(separador1);
       
-      // Palabra "Pista" con diseño especial
       const pistaContainer = document.createElement('div');
       pistaContainer.style.cssText = `
         background: linear-gradient(135deg, #FF69B4, #FF1493);
@@ -345,7 +443,6 @@
       pistaContainer.textContent = '💡 Pista 💡';
       contenidoModal.appendChild(pistaContainer);
       
-      // Contador de números restantes
       const contador = document.createElement('div');
       contador.style.cssText = `
         font-size: 1rem;
@@ -356,7 +453,6 @@
       contador.textContent = `🎯 Quedan ${textosActivos.length - 1} números por descubrir`;
       contenidoModal.appendChild(contador);
       
-      // Línea separadora decorativa 2
       const separador2 = document.createElement('div');
       separador2.style.cssText = `
         width: 60%;
@@ -367,14 +463,11 @@
       `;
       contenidoModal.appendChild(separador2);
       
-      // Obtener el mensaje correspondiente al número
       const numeroInt = parseInt(numero);
       const mensajeCompleto = MENSAJES_POR_NUMERO[numeroInt] || MENSAJE_POR_DEFECTO;
       
-      // Dividir el mensaje en líneas
       const lineas = mensajeCompleto.split('\n');
       
-      // Crear contenedor para el mensaje
       const mensajeContainer = document.createElement('div');
       mensajeContainer.style.cssText = `
         background: rgba(255, 255, 255, 0.8);
@@ -384,7 +477,6 @@
         border: 2px solid #FFB6C1;
       `;
       
-      // Agregar cada línea del mensaje
       lineas.forEach((linea, index) => {
         const parrafo = document.createElement('p');
         parrafo.textContent = linea;
@@ -400,7 +492,6 @@
       
       contenidoModal.appendChild(mensajeContainer);
       
-      // Botón para cerrar y eliminar número
       const botonEliminar = document.createElement('button');
       botonEliminar.textContent = '🎀 ¡Eliminar número! 🎀';
       botonEliminar.style.cssText = `
@@ -433,19 +524,24 @@
     }
   }
 
-  // =============================================
-  //  ELIMINAR NÚMERO DE LA RULETA
-  // =============================================
   function eliminarNumero(numero) {
     const index = textosActivos.indexOf(numero.toString());
     if (index > -1) {
       textosActivos.splice(index, 1);
-      console.log(`🗑️ Número ${numero} eliminado. Quedan: ${textosActivos.length} números`);
+      numerosEliminados++;
+      console.log(`🗑️ Número ${numero} eliminado. Quedan: ${textosActivos.length} | Eliminados: ${numerosEliminados}`);
+      console.log(`📊 Números restantes: [${textosActivos.join(', ')}]`);
       
-      // Redibujar ruleta con los números restantes
+      // Mostrar estado de probabilidades
+      if (CONFIG_PROBABILIDADES[5]) {
+        console.log(`🎲 Número 5: ${textosActivos.includes('5') ? '✅ Presente' : '❌ Eliminado'} | Aparecerá cuando queden 2 números`);
+      }
+      if (CONFIG_PROBABILIDADES[7]) {
+        console.log(`🎲 Número 7: ${textosActivos.includes('7') ? '✅ Presente' : '❌ Eliminado'} | Aparecerá después de ${CONFIG_PROBABILIDADES[7].eliminacionesNecesarias} eliminaciones (van ${numerosEliminados})`);
+      }
+      
       dibujarRuleta(anguloInicial);
       
-      // Actualizar resultado
       if (textosActivos.length > 0) {
         const indiceInicial = obtenerIndiceGanador(anguloInicial);
         if (indiceInicial >= 0 && indiceInicial < textosActivos.length) {
@@ -453,7 +549,6 @@
         }
       }
       
-      // Si solo queda un número, mostrar ventana final automáticamente
       if (textosActivos.length === 1) {
         setTimeout(() => {
           mostrarVentanaGanador(textosActivos[0], null);
@@ -462,26 +557,22 @@
     }
   }
 
-  // =============================================
-  //  REINICIAR JUEGO
-  // =============================================
   function reiniciarJuego() {
     inicializarTextos();
     anguloInicial = 0;
     velocidadActual = 0;
     animacionActiva = false;
     
-    // Reactivar botón
     girarBtn.disabled = false;
     girarBtn.style.opacity = '1';
     girarBtn.style.cursor = 'pointer';
     
-    // Redibujar
     dibujarRuleta(anguloInicial);
     resultadoSpan.textContent = `🎀 ${textosActivos[0]} 🎀`;
     
     console.log("🔄 Juego reiniciado!");
     console.log("📝 Números activos:", textosActivos);
+    console.log("📊 Eliminaciones: 0");
   }
 
   function dibujarHelloKitty(x, y, tamano) {
@@ -491,7 +582,6 @@
     ctx.translate(x, y);
     ctx.scale(escala, escala);
     
-    // Cara
     ctx.fillStyle = "#FFFFFF";
     ctx.strokeStyle = "#FF69B4";
     ctx.lineWidth = 2;
@@ -500,7 +590,6 @@
     ctx.fill();
     ctx.stroke();
     
-    // Orejas
     ctx.fillStyle = "#FFFFFF";
     ctx.strokeStyle = "#FF69B4";
     ctx.lineWidth = 2;
@@ -513,7 +602,6 @@
     ctx.fill();
     ctx.stroke();
     
-    // Moño
     ctx.fillStyle = "#FF1493";
     ctx.beginPath();
     ctx.ellipse(12, -12, 5, 3, -0.3, 0, Math.PI * 2);
@@ -522,7 +610,6 @@
     ctx.ellipse(12, -12, 5, 3, 0.3, 0, Math.PI * 2);
     ctx.fill();
     
-    // Ojos
     ctx.fillStyle = "#000000";
     ctx.beginPath();
     ctx.arc(-5, -2, 2, 0, Math.PI * 2);
@@ -531,13 +618,11 @@
     ctx.arc(5, -2, 2, 0, Math.PI * 2);
     ctx.fill();
     
-    // Nariz
     ctx.fillStyle = "#FFD700";
     ctx.beginPath();
     ctx.ellipse(0, 3, 2.5, 2, 0, 0, Math.PI * 2);
     ctx.fill();
     
-    // Bigotes
     ctx.strokeStyle = "#000000";
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -580,13 +665,11 @@
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Fondo
     ctx.fillStyle = "#FFF5FA";
     ctx.beginPath();
     ctx.arc(centroX, centroY, radio + 20, 0, getAnguloTotal());
     ctx.fill();
     
-    // Bordes decorativos
     ctx.beginPath();
     ctx.arc(centroX, centroY, radio + 15, 0, getAnguloTotal());
     ctx.strokeStyle = "#FF1493";
@@ -609,12 +692,10 @@
     
     const coloresSegmento = obtenerColores(numPartesActual);
     
-    // Dibujar segmentos
     for (let i = 0; i < numPartesActual; i++) {
       const anguloInicio = i * anguloPorParteActual + anguloRotacion;
       const anguloFin = anguloInicio + anguloPorParteActual;
       
-      // Sector coloreado
       ctx.beginPath();
       ctx.moveTo(centroX, centroY);
       ctx.arc(centroX, centroY, radio, anguloInicio, anguloFin);
@@ -625,7 +706,6 @@
       ctx.lineWidth = 3;
       ctx.stroke();
       
-      // TEXTO CENTRADO EN EL SEGMENTO
       const anguloMedio = anguloInicio + anguloPorParteActual / 2;
       const distancia = radio * AJUSTE_POSICION.distanciaDesdeCentro;
       const xTexto = centroX + Math.cos(anguloMedio) * distancia;
@@ -633,7 +713,6 @@
       
       const texto = textosActivos[i] || (i + 1).toString();
       
-      // Aumentar tamaño de fuente cuando hay menos números
       let tamanoFuente = AJUSTE_POSICION.tamanoFuente;
       if (numPartesActual <= 3) tamanoFuente = 52;
       if (numPartesActual === 2) tamanoFuente = 60;
@@ -666,11 +745,9 @@
       ctx.fillText(texto, xTexto, yTexto);
     }
     
-    // Hello Kitty centro (más pequeña si hay pocos números)
     const tamanoKitty = numPartesActual <= 2 ? 45 : 55;
     dibujarHelloKitty(centroX, centroY, tamanoKitty);
     
-    // Decoración alrededor
     const numDecoraciones = numPartesActual <= 2 ? 12 : 16;
     for (let i = 0; i < numDecoraciones; i++) {
       const ang = (i * Math.PI * 2) / numDecoraciones;
@@ -695,14 +772,7 @@
   function obtenerIndiceGanador(angulo) {
     if (textosActivos.length === 0) return -1;
     
-    const anguloFlecha = -Math.PI / 2;
-    const anguloPorParteActual = getAnguloTotal() / textosActivos.length;
-    
-    let anguloRelativo = (anguloFlecha - angulo) % getAnguloTotal();
-    if (anguloRelativo < 0) anguloRelativo += getAnguloTotal();
-    
-    const indice = Math.floor(anguloRelativo / anguloPorParteActual) % textosActivos.length;
-    return indice;
+    return obtenerIndiceGanadorForzado();
   }
 
   function mostrarResultado(indice) {
@@ -710,7 +780,6 @@
       const numeroGanador = textosActivos[indice];
       resultadoSpan.textContent = `🎀 ${numeroGanador} 🎀`;
       
-      // Mostrar ventana modal con el número ganador
       setTimeout(() => {
         mostrarVentanaGanador(numeroGanador, () => {
           eliminarNumero(numeroGanador);
@@ -752,14 +821,12 @@
     girarBtn.disabled = true;
     resultadoSpan.textContent = "🎀 Girando... 🎀";
     
-    // Cerrar modal si existe
     const modalAbierto = document.getElementById('modal-ganador');
     if (modalAbierto) modalAbierto.remove();
     
     frameId = requestAnimationFrame(animarGiro);
   }
 
-  // Polyfill roundRect
   if (!ctx.roundRect) {
     ctx.roundRect = function(x, y, w, h, r) {
       if (typeof r === 'number') r = { tl: r, tr: r, br: r, bl: r };
@@ -787,7 +854,9 @@
     girarBtn.addEventListener('click', iniciarGiro);
     console.log("🎀 Ruleta Hello Kitty lista!");
     console.log("📝 Números activos:", textosActivos);
-    console.log("💡 Cierra el modal para eliminar el número");
+    console.log("🎲 Probabilidades configuradas:");
+    console.log("  - Número 5: Solo penúltimo (cuando queden 2)");
+    console.log("  - Número 7: Después de 7 eliminaciones");
   }
 
   inicializar();
