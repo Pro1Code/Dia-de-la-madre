@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>🎀 Ruleta Hello Kitty - Día de la Madre 🎀</title>
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <div class="container">
+    <h1>
+      <span>🎀</span> Mamá Kitty <span>🎀</span>
+    </h1>
+    
+    <!-- Lista de textos que se usará en la ruleta -->
+    <ul id="lista-textos">
+      <li>1</li>
+      <li>2</li>
+      <li>3</li>
+      <li>4</li>
+      <li>5</li>
+      <li>6</li>
+    </ul>
+
+    <div class="ruleta-wrapper">
+        <div class="flecha">▼</div>
+        <canvas id="ruletaCanvas" width="450" height="450"></canvas>
+    </div>
+
+    <div class="controles">
+      <button id="girarBtn">🎀 Girar 🎀</button>
+      <div class="resultado" id="resultadoTexto">✨ ??? ✨</div>
+    </div>
+    <div class="mensaje">
+      <span>🐱</span> ¡Feliz Día de la Madre! <span>🌸</span>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
